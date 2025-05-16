@@ -1594,6 +1594,7 @@ dependencies = [
  "jito-protos",
  "solana-entry 2.2.1",
  "tokio",
+ "tonic 0.10.2",
 ]
 
 [[package]]
