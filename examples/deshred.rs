@@ -1,10 +1,11 @@
+use chrono::Utc;
 use jito_protos::shredstream::{
     shredstream_proxy_client::ShredstreamProxyClient, SubscribeEntriesRequest,
 };
-use tonic::metadata::MetadataValue;
-use tonic::Request;
 use std::env;
 use std::str::FromStr;
+use tonic::metadata::MetadataValue;
+use tonic::Request;
 
 #[tokio::main]
 async fn main() -> Result<(), std::io::Error> {
@@ -23,14 +24,13 @@ async fn main() -> Result<(), std::io::Error> {
         .unwrap();
 
     // Create a client with the authenticated channel
-    let mut client = ShredstreamProxyClient::with_interceptor(channel, move |mut req: Request<()>| {
-        // Add the x-token header to each request
-        req.metadata_mut().insert(
-            "x-token",
-            MetadataValue::from_str(&auth_token).unwrap(),
-        );
-        Ok(req)
-    });
+    let mut client =
+        ShredstreamProxyClient::with_interceptor(channel, move |mut req: Request<()>| {
+            // Add the x-token header to each request
+            req.metadata_mut()
+                .insert("x-token", MetadataValue::from_str(&auth_token).unwrap());
+            Ok(req)
+        });
 
     let mut stream = client
         .subscribe_entries(SubscribeEntriesRequest {})
@@ -47,14 +47,20 @@ async fn main() -> Result<(), std::io::Error> {
                     continue;
                 }
             };
-        println!(
-            "slot {}, entries: {}",
-            slot_entry.slot,
-            entries.len(),
-        );
         for entry in &entries {
             for tx in &entry.transactions {
-                println!("\nSlot: {}\nTransaction: {:?}", slot_entry.slot, tx);
+                let account_keys = tx.message.static_account_keys();
+                match account_keys.iter().find(|key| {
+                    key.to_string()
+                        .starts_with("Vote111111111111111111111111111111111111111")
+                }) {
+                    Some(_key) => {
+                        continue;
+                    }
+                    None => {
+                        println!("{} {:?}", Utc::now().to_rfc3339(), tx.signatures[0]);
+                    }
+                }
             }
         }
     }

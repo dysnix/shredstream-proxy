@@ -5,6 +5,7 @@ publish = false
 
 [dependencies]
 bincode = { workspace = true }
+chrono = "0.4.41"
 jito-protos = { path = "../jito_protos" }
 solana-entry = { workspace = true }
 tokio = { version = "1", features = ["full", "macros", "rt-multi-thread"] }
