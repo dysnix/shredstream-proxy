@@ -8,9 +8,14 @@ bincode = { workspace = true }
 chrono = "0.4.41"
 jito-protos = { path = "../jito_protos" }
 solana-entry = { workspace = true }
+solana-ledger = { workspace = true }
 tokio = { version = "1", features = ["full", "macros", "rt-multi-thread"] }
 tonic.workspace = true
 
 [[example]]
 name = "deshred"
 path = "deshred.rs"
+
+[[example]]
+name = "udp_client"
+path = "udp_client.rs"
