@@ -2778,6 +2778,7 @@ dependencies = [
  "serde",
  "serde_json",
  "signal-hook",
+ "socket2",
  "solana-client",
  "solana-entry 2.2.1",
  "solana-ledger",

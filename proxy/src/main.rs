@@ -16,7 +16,7 @@ use std::{
 };
 
 use arc_swap::ArcSwap;
-use clap::{arg, Parser};
+use clap::Parser;
 use crossbeam_channel::{Receiver, RecvError, Sender};
 use log::*;
 use signal_hook::consts::{SIGINT, SIGTERM};

@@ -7,6 +7,7 @@ use std::{
 use itertools::{Either, Itertools};
 use log::{debug, info, warn};
 use serde::Deserialize;
+use socket2::{Domain, Protocol, Socket, Type};
 
 fn run_ip_json(args: &[&str]) -> io::Result<Vec<u8>> {
     let output = Command::new("ip").args(args).output()?;
@@ -112,6 +113,18 @@ pub fn parse_ifindex_from_ip_link_show_json(bytes: &[u8]) -> io::Result<Option<u
     Ok(rows.into_iter().last().and_then(|r| r.ifindex))
 }
 
+fn bind_reuse_udp(addr: SocketAddr) -> io::Result<UdpSocket> {
+    let domain = match addr {
+        SocketAddr::V4(_) => Domain::IPV4,
+        SocketAddr::V6(_) => Domain::IPV6,
+    };
+    let socket = Socket::new(domain, Type::DGRAM, Some(Protocol::UDP))?;
+    socket.set_reuse_address(true)?;
+    socket.set_reuse_port(true)?;
+    socket.bind(&addr.into())?;
+    Ok(socket.into())
+}
+
 /// Creates one UDP socket bound on `multicast_port` and joins applicable multicast groups.
 /// If `multicast_ip` is provided, join just that group, otherwise parse `ip route list` for
 /// entries on `device_name` and join all multicast groups found.
@@ -152,7 +165,7 @@ pub fn create_multicast_socket_on_device(
     let mut sockets: Vec<UdpSocket> = Vec::new();
     if !groups_v4.is_empty() {
         let addr_v4 = SocketAddr::new(IpAddr::V4(Ipv4Addr::UNSPECIFIED), multicast_port);
-        match UdpSocket::bind(addr_v4) {
+        match bind_reuse_udp(addr_v4) {
             Ok(sock_v4) => {
                 for g in &groups_v4 {
                     match sock_v4
@@ -170,7 +183,7 @@ pub fn create_multicast_socket_on_device(
 
     if !groups_v6.is_empty() {
         let addr_v6 = SocketAddr::new(IpAddr::V6(Ipv6Addr::UNSPECIFIED), multicast_port);
-        match UdpSocket::bind(addr_v6) {
+        match bind_reuse_udp(addr_v6) {
             Ok(sock_v6) => {
                 for g in &groups_v6 {
                     match sock_v6.join_multicast_v6(g, device_ifindex_v6.unwrap_or(0)) {
